@@ -1,0 +1,52 @@
+import os
+from dotenv import load_dotenv
+from google import genai
+from google.genai import types
+
+load_dotenv()
+client = genai.Client(api_key=os.environ["GOOGLE_GENERATIVEAI_API_KEY"])
+
+# 1. Define the Tool (The docstring is the prompt!)
+def save_device_command(device_id: str, command: str):
+    """
+    Saves the last executed command to the device's memory.
+    Call this tool ONLY when the user explicitly asks to send or save a command to a specific device.
+    """
+    print(f"\n[SYSTEM ACTION] -> Connecting to device '{device_id}'...")
+    print(f"[SYSTEM ACTION] -> Saving command: '{command}'")
+    
+    # In the future, your async API logic goes here
+    return {"status": "success", "device_id": device_id, "saved_command": command}
+
+# 2. Give the tool to the Gemini Chat Session
+chat = client.chats.create(
+    model='gemini-1.5-flash',
+    config=types.GenerateContentConfig(
+        tools=[save_device_command], # <--- Passing the tool here
+        temperature=0.0
+    )
+)
+
+# --- Test 1: Normal Chat ---
+print("--- TEST 1: Normal Conversation ---")
+response1 = chat.send_message("Hi, what can you do?")
+print("AI:", response1.text)
+
+
+# --- Test 2: Triggering the Tool ---
+print("\n--- TEST 2: Action Request ---")
+response2 = chat.send_message("Please save the 'reboot_system' command to device_1024.")
+
+# Check if the AI decided to use the tool
+if response2.function_calls:
+    for tool_call in response2.function_calls:
+        print("\nAI decided to use a tool!")
+        print("Tool Name:", tool_call.name)
+        print("Generated Arguments:", tool_call.args)
+        
+        # Actually execute your Python function using the AI's generated arguments
+        if tool_call.name == "save_device_command":
+            result = save_device_command(**tool_call.args)
+            print("Function Result:", result)
+else:
+    print("AI:", response2.text)
