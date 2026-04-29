@@ -20,7 +20,7 @@ def save_device_command(device_id: str, command: str):
 
 # 2. Give the tool to the Gemini Chat Session
 chat = client.chats.create(
-    model='gemini-1.5-flash',
+    model='gemini-2.5-flash',
     config=types.GenerateContentConfig(
         tools=[save_device_command], # <--- Passing the tool here
         temperature=0.0

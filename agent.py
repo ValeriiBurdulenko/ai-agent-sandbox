@@ -14,7 +14,7 @@ def start_chat(system_prompt=None, temperature=0.7):
         config_params["system_instruction"] = system_prompt
         
     return client.chats.create(
-        model='gemini-1.5-flash',
+        model='gemini-2.5-flash',
         config=types.GenerateContentConfig(**config_params)
     )
 
