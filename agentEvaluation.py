@@ -146,28 +146,33 @@ class PromptEvaluator:
 # ==========================================
 def run_prompt(client, test_case):
     """
-    ITERATION 2: Advanced Prompt with Process Steps and Guidelines.
+    ITERATION 3: Master Prompt using XML Tags, Process Steps, and Guidelines.
     """
     prompt = f"""
-    You are an expert duty IoT engineer.
+    You are an expert duty IoT engineer. Analyze the provided telemetry data and provide troubleshooting advice.
     
-    ERROR: {test_case.get('alert_type', '')}
-    DETAILS: {test_case.get('scenario', '')}
+    <telemetry_data>
+        <error_type>{test_case.get('alert_type', '')}</error_type>
+        <physical_symptoms>{test_case.get('scenario', '')}</physical_symptoms>
+    </telemetry_data>
 
-    PROCESS STEPS:
-    Before providing the final answer, follow these steps:
-    1. Analyze the physical mechanism of the device and what could cause this specific error.
-    2. Determine if this poses a physical safety risk to the facility.
-    3. Formulate a step-by-step repair plan.
+    <process_steps>
+        Before providing the JSON answer, follow these steps:
+        1. Analyze the physical mechanism of the device based on the telemetry data.
+        2. Identify the root cause of the error.
+        3. Determine if this poses a physical safety risk to the facility.
+        4. Formulate a step-by-step repair plan.
+    </process_steps>
     
-    OUTPUT GUIDELINES:
-    - You must return STRICT VALID JSON.
-    - Include a "diagnosis" key (string).
-    - Include an "action_plan" key (array of strings, max 3 steps).
-    - Include a "safety_risk" key (boolean).
-    - The final step in the action plan MUST be: "Save alert to device memory."
+    <output_guidelines>
+        - Return STRICT VALID JSON only. No markdown formatting outside the JSON.
+        - Key "diagnosis": A short string explaining the root cause.
+        - Key "action_plan": An array of strings (max 3 steps).
+        - Key "safety_risk": A boolean (true/false).
+        - MANDATORY: The final step in the "action_plan" MUST be exactly: "Save alert to device memory."
+    </output_guidelines>
     """
-    
+
     response = client.models.generate_content(
         model=TARGET_MODEL,
         contents=prompt,
