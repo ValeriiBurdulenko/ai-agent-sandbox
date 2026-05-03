@@ -146,10 +146,33 @@ class PromptEvaluator:
 # ==========================================
 def run_prompt(client, test_case):
     """
-    ITERATION 3: Master Prompt using XML Tags, Process Steps, and Guidelines.
+    ITERATION 4: The Ultimate Prompt (XML + Process Steps + Guidelines + Few-Shot Examples).
     """
     prompt = f"""
     You are an expert duty IoT engineer. Analyze the provided telemetry data and provide troubleshooting advice.
+
+    <examples>
+      <example>
+        <context>
+          This example shows how to handle a tricky physical installation error and format the output perfectly.
+        </context>
+        <sample_telemetry>
+          <error_code>CRITICAL_DIRECTION</error_code>
+          <physical_symptoms>The system is calling for cooling, but the temperature is rising rapidly.</physical_symptoms>
+        </sample_telemetry>
+        <ideal_output>
+          {{
+            "diagnosis": "The cooling valve is likely wired in reverse (polarity flipped) or mechanically installed backward, causing it to heat when it should cool.",
+            "action_plan": [
+              "Immediately override the valve to manual OFF to prevent further heating.",
+              "Dispatch a technician to check the physical wiring polarity of the actuator.",
+              "Save alert to device memory."
+            ],
+            "safety_risk": true
+          }}
+        </ideal_output>
+      </example>
+    </examples>
     
     <telemetry_data>
         <error_type>{test_case.get('alert_type', '')}</error_type>
