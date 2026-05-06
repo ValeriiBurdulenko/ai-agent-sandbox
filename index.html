@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT AI Agent - Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            background-color: #0052cc;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: #003d99; }
+        .error-btn { background-color: #de350b; }
+        .error-btn:hover { background-color: #bf2600; }
+        
+        #chat-box {
+            border: 1px solid #dfe1e6;
+            background: #fafbfc;
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            border-radius: 6px;
+            line-height: 1.6;
+        }
+        pre { background: #172b4d; color: white; padding: 10px; border-radius: 4px; }
+        code { background: #ebecf0; padding: 2px 4px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>🛠️ Simulation von IoT-Fehlern</h2>
+        <p>Klicke auf die Schaltfläche, um einen Fehler an den Agenten über WebSocket zu senden:</p>
+        
+        <div class="buttons">
+            <button class="error-btn" onclick="triggerAlert('STUCK', 'Der Ventilmechanismus hat die Zielposition nicht erreicht (steckt bei 45C)')">
+                🔥 Fehler: STUCK (Ventil)
+            </button>
+            <button onclick="triggerAlert('OFFLINE', 'Der Drucksensor sendet keine heartbeat-Nachrichten mehr')">
+                📡 Fehler: OFFLINE (Sensor)
+            </button>
+        </div>
+
+        <h3>Antwort des Agenten:</h3>
+        <div id="chat-box">
+            <em>Here will appear the real-time response...</em>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let fullAgentResponse = "";
+
+        function triggerAlert(alertType, scenario) {
+            const chatBox = document.getElementById('chat-box');
+            fullAgentResponse = "";
+            chatBox.innerHTML = `<b>Senden:</b> ${alertType}...<br><br>`;
+
+            // Wenn die Verbindung bereits offen ist - schließen (um Doppelsendungen zu vermeiden)
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.close();
+            }
+
+            ws = new WebSocket("ws://localhost:8000/ws/troubleshoot");
+
+            ws.onopen = () => {
+                // Wie schnell wir verbunden sind, senden wir JSON mit der Fehlermeldung
+                const payload = {
+                    device_id: "DEV-8819A",
+                    alert_type: alertType,
+                    scenario: scenario
+                };
+                ws.send(JSON.stringify(payload));
+            };
+
+            ws.onmessage = (event) => {
+                // Der Server hat das Abschluss-Signal gesendet
+                if (event.data === "[DONE]") {
+                    ws.close();
+                    return;
+                }
+
+                // Fügen wir einen neuen Textabschnitt zum Gesamtantwort hinzu
+                fullAgentResponse += event.data;
+                
+                // Rendern wir Markdown in schönes HTML
+                chatBox.innerHTML = marked.parse(fullAgentResponse);
+                
+                // Auto-Scroll nach unten
+                chatBox.scrollTop = chatBox.scrollHeight;
+            };
+
+            ws.onerror = (error) => {
+                chatBox.innerHTML += `<br><span style="color: red;">Fehler bei der Verbindung. Ist der FastAPI-Server gestartet?</span>`;
+            };
+        }
+    </script>
+</body>
+</html>
